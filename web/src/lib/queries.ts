@@ -43,17 +43,14 @@ export function githubIssuesQuery(req: AnalyzeRequest): string {
 }
 
 export function sentryIssuesQuery(req: AnalyzeRequest): string {
-  const org = req.sentryOrg ?? process.env.SENTRY_ORG ?? '';
   const project = req.sentryProject ?? process.env.SENTRY_PROJECT ?? '';
+  const projectFilter = project ? `WHERE project = '${project}'` : '';
   return `
-    SELECT id, title, culprit, level, status, count AS occurrences,
-           user_count, first_seen, last_seen
+    SELECT id, title, level, status, count AS occurrences,
+           user_count, first_seen, last_seen, project
     FROM sentry.issues
-    WHERE organization_slug = '${org}'
-      AND project_slug      = '${project}'
-      AND first_seen        >= '${req.launchDate}'
-      AND status            = 'unresolved'
-    ORDER BY count DESC
+    ${projectFilter}
+    ORDER BY occurrences DESC
     LIMIT 10
   `.trim();
 }

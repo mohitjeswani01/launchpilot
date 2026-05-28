@@ -7,19 +7,19 @@ const SOURCE_TESTS = [
   {
     name: 'github',
     label: 'GitHub',
-    query: "SELECT name FROM github.user_repos LIMIT 1",
+    query: "SELECT login FROM github.user LIMIT 1",
     envKey: 'GITHUB_TOKEN',
   },
   {
     name: 'sentry',
     label: 'Sentry',
-    query: `SELECT id FROM sentry.issues WHERE organization_slug = '${process.env.SENTRY_ORG}' AND project_slug = '${process.env.SENTRY_PROJECT}' LIMIT 1`,
-    envKey: 'SENTRY_AUTH_TOKEN',
+    query: "SELECT id, slug FROM sentry.projects LIMIT 1",
+    envKey: 'SENTRY_TOKEN',
   },
   {
     name: 'posthog',
     label: 'PostHog',
-    query: "SELECT id FROM posthog.organizations LIMIT 1",
+    query: "SELECT id FROM posthog.projects LIMIT 1",
     envKey: 'POSTHOG_API_KEY',
   },
   {
