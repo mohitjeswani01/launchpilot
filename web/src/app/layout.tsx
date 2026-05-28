@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -14,10 +14,14 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#080808",
+};
+
 export const metadata: Metadata = {
   title: "LaunchPilot — Launch Intelligence Dashboard",
   description:
-    "Know if your product launch is winning or failing — before your CEO asks. Multi-source analytics powered by Coral SQL.",
+    "Know if your product launch is succeeding or failing — before your CEO asks. Multi-source analytics powered by Coral SQL.",
   keywords: ["launch analytics", "product intelligence", "SaaS", "Coral SQL", "DevOps"],
   authors: [{ name: "LaunchPilot" }],
   openGraph: {
@@ -25,7 +29,6 @@ export const metadata: Metadata = {
     description: "Launch Intelligence Dashboard powered by Coral SQL",
     type: "website",
   },
-  themeColor: "#080808",
 };
 
 export default function RootLayout({
