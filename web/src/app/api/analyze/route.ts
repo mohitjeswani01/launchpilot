@@ -27,7 +27,6 @@ export const maxDuration = 60; // Allow up to 60s for all queries
 const IS_VERCEL = process.env.VERCEL === '1';
 
 function buildDemoAnalysis(body: AnalyzeRequest): LaunchAnalysis {
-  const launchTs = Math.floor(new Date(body.launchDate).getTime() / 1000);
   return {
     id: randomUUID(),
     featureName: body.featureName,
@@ -43,44 +42,56 @@ function buildDemoAnalysis(body: AnalyzeRequest): LaunchAnalysis {
       {
         source:    'github',
         label:     'GitHub Activity',
+        status:    'live' as const,
+        icon:      '⚡',
         value:     '8 PRs merged',
         subtext:   'CI passing · 3 active contributors',
-        sentiment: 'positive',
+        sentiment: 'positive' as const,
       },
       {
         source:    'sentry',
         label:     'Error Rate',
+        status:    'live' as const,
+        icon:      '🐛',
         value:     '0 new errors',
         subtext:   'Clean launch 🎉',
-        sentiment: 'positive',
+        sentiment: 'positive' as const,
       },
       {
         source:    'posthog',
         label:     'Feature Adoption',
+        status:    'live' as const,
+        icon:      '📊',
         value:     '2 flags active',
         subtext:   '~9% early adoption',
-        sentiment: 'neutral',
+        sentiment: 'neutral' as const,
       },
       {
         source:    'stripe',
         label:     'Revenue Signal',
+        status:    'live' as const,
+        icon:      '💳',
         value:     '3 new subs',
         subtext:   '$90 MRR added since launch',
-        sentiment: 'positive',
+        sentiment: 'positive' as const,
       },
       {
         source:    'beehiiv',
         label:     'Newsletter Reach',
+        status:    'live' as const,
+        icon:      '📧',
         value:     '1 post sent',
         subtext:   '58% open rate · 980 readers',
-        sentiment: 'positive',
+        sentiment: 'positive' as const,
       },
       {
         source:    'dub',
         label:     'Link Analytics',
+        status:    'live' as const,
+        icon:      '🔗',
         value:     '342 clicks',
         subtext:   '2 tracked links · launch thread',
-        sentiment: 'positive',
+        sentiment: 'positive' as const,
       },
     ],
     keyInsights: [
@@ -124,8 +135,6 @@ function buildDemoAnalysis(body: AnalyzeRequest): LaunchAnalysis {
         sql:        stripeSubscriptionsQuery(body),
         rowCount:   3,
         durationMs: 923,
-        // @ts-expect-error launchTs used only in demo log
-        _launchTs:  launchTs,
       },
       {
         source:     'beehiiv',
