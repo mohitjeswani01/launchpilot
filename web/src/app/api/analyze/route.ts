@@ -13,6 +13,7 @@ import { scoreLaunch, getVerdictTitle, getVerdictSummary } from '@/lib/scorer';
 import { AnalyzeRequest, AnalyzeResponse, LaunchAnalysis } from '@/lib/types';
 import { randomUUID } from 'crypto';
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60s for all queries
 
 export async function POST(req: NextRequest): Promise<NextResponse<AnalyzeResponse>> {

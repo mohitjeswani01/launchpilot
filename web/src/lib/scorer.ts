@@ -216,7 +216,10 @@ export function getVerdictSummary(
   }
   if (status === 'at_risk') {
     const warnings = metrics.filter((m) => m.sentiment === 'warning' || m.sentiment === 'negative');
-    return `${featureName} shows mixed signals. Pay attention to: ${warnings.map((w) => w.label).join(', ')}.`;
+    const warningLabels = warnings.map((w) => w.label).join(', ');
+    return warningLabels
+      ? `${featureName} shows mixed signals. Pay attention to: ${warningLabels}.`
+      : `${featureName} shows mixed signals. Monitor all sources closely over the next 24 hours.`;
   }
   return `${featureName} has critical issues. Immediate action required — check error rate and CI status.`;
 }

@@ -2,47 +2,50 @@ import { NextResponse } from 'next/server';
 import { checkSourceHealth } from '@/lib/coral';
 import { SourceHealthResponse } from '@/lib/types';
 
-// Light test queries per source
-const SOURCE_TESTS = [
-  {
-    name: 'github',
-    label: 'GitHub',
-    query: "SELECT login FROM github.user LIMIT 1",
-    envKey: 'GITHUB_TOKEN',
-  },
-  {
-    name: 'sentry',
-    label: 'Sentry',
-    query: "SELECT id, slug FROM sentry.projects LIMIT 1",
-    envKey: 'SENTRY_TOKEN',
-  },
-  {
-    name: 'posthog',
-    label: 'PostHog',
-    query: `SELECT id FROM posthog.feature_flags WHERE project_id = '${process.env.POSTHOG_PROJECT_ID}' LIMIT 1`,
-    envKey: 'POSTHOG_API_KEY',
-  },
-  {
-    name: 'stripe',
-    label: 'Stripe',
-    query: "SELECT id FROM stripe.account LIMIT 1",
-    envKey: 'STRIPE_API_KEY',
-  },
-  {
-    name: 'beehiiv',
-    label: 'Beehiiv ⭐',
-    query: `SELECT id FROM beehiiv.publications LIMIT 1`,
-    envKey: 'BEEHIIV_API_KEY',
-  },
-  {
-    name: 'dub',
-    label: 'Dub ⭐',
-    query: "SELECT id FROM dub.links LIMIT 1",
-    envKey: 'DUB_API_KEY',
-  },
-];
+// Force dynamic so Next.js never statically pre-renders this route
+export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<NextResponse<SourceHealthResponse>> {
+  // Build source tests inside handler so process.env is read at runtime
+  const SOURCE_TESTS = [
+    {
+      name: 'github',
+      label: 'GitHub',
+      query: 'SELECT login FROM github.user LIMIT 1',
+      envKey: 'GITHUB_TOKEN',
+    },
+    {
+      name: 'sentry',
+      label: 'Sentry',
+      query: 'SELECT id, slug FROM sentry.projects LIMIT 1',
+      envKey: 'SENTRY_TOKEN',
+    },
+    {
+      name: 'posthog',
+      label: 'PostHog',
+      query: `SELECT id FROM posthog.feature_flags WHERE project_id = '${process.env.POSTHOG_PROJECT_ID ?? ''}' LIMIT 1`,
+      envKey: 'POSTHOG_API_KEY',
+    },
+    {
+      name: 'stripe',
+      label: 'Stripe',
+      query: 'SELECT id FROM stripe.account LIMIT 1',
+      envKey: 'STRIPE_API_KEY',
+    },
+    {
+      name: 'beehiiv',
+      label: 'Beehiiv ⭐',
+      query: `SELECT id FROM beehiiv.publications LIMIT 1`,
+      envKey: 'BEEHIIV_API_KEY',
+    },
+    {
+      name: 'dub',
+      label: 'Dub ⭐',
+      query: 'SELECT id FROM dub.links LIMIT 1',
+      envKey: 'DUB_API_KEY',
+    },
+  ];
+
   const results = await Promise.allSettled(
     SOURCE_TESTS.map(async (s) => {
       const configured = !!process.env[s.envKey];
