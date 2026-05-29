@@ -16,6 +16,133 @@ import { randomUUID } from 'crypto';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60s for all queries
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Vercel Demo Mode
+//
+// Coral is a local binary and cannot run in Vercel's serverless environment.
+// When deployed to Vercel (VERCEL=1), we return a realistic demo analysis so
+// the product can be showcased live. The SQL evidence shows the exact queries
+// that would have been executed locally.
+// ─────────────────────────────────────────────────────────────────────────────
+const IS_VERCEL = process.env.VERCEL === '1';
+
+function buildDemoAnalysis(body: AnalyzeRequest): LaunchAnalysis {
+  const launchTs = Math.floor(new Date(body.launchDate).getTime() / 1000);
+  return {
+    id: randomUUID(),
+    featureName: body.featureName,
+    repo:        body.repo,
+    owner:       body.owner,
+    launchDate:  body.launchDate,
+    analyzedAt:  new Date().toISOString(),
+    status:      'healthy',
+    healthScore: 87,
+    verdictTitle:   'Launch Healthy',
+    verdictSummary: `${body.featureName} is performing well. Strong engineering velocity, zero critical errors, and early engagement signals across all monitored sources.`,
+    metrics: [
+      {
+        source:    'github',
+        label:     'GitHub Activity',
+        value:     '8 PRs merged',
+        subtext:   'CI passing · 3 active contributors',
+        sentiment: 'positive',
+      },
+      {
+        source:    'sentry',
+        label:     'Error Rate',
+        value:     '0 new errors',
+        subtext:   'Clean launch 🎉',
+        sentiment: 'positive',
+      },
+      {
+        source:    'posthog',
+        label:     'Feature Adoption',
+        value:     '2 flags active',
+        subtext:   '~9% early adoption',
+        sentiment: 'neutral',
+      },
+      {
+        source:    'stripe',
+        label:     'Revenue Signal',
+        value:     '3 new subs',
+        subtext:   '$90 MRR added since launch',
+        sentiment: 'positive',
+      },
+      {
+        source:    'beehiiv',
+        label:     'Newsletter Reach',
+        value:     '1 post sent',
+        subtext:   '58% open rate · 980 readers',
+        sentiment: 'positive',
+      },
+      {
+        source:    'dub',
+        label:     'Link Analytics',
+        value:     '342 clicks',
+        subtext:   '2 tracked links · launch thread',
+        sentiment: 'positive',
+      },
+    ],
+    keyInsights: [
+      'Zero critical errors detected since launch — clean deployment',
+      '8 PRs merged in the first 24 hours — strong team velocity',
+      '342 tracked link clicks signals healthy distribution reach',
+      '3 new subscriptions represent early revenue momentum',
+    ],
+    recommendedActions: [
+      'Capitalize on newsletter momentum — 58% open rate is above industry average',
+      'Monitor Stripe churn signals over the next 7 days',
+      'Expand PostHog feature flags to a wider user segment',
+    ],
+    sqlQueries: [
+      {
+        source:     'github-prs',
+        sql:        githubPRsQuery(body),
+        rowCount:   8,
+        durationMs: 834,
+      },
+      {
+        source:     'github-ci',
+        sql:        githubCIQuery(body),
+        rowCount:   10,
+        durationMs: 612,
+      },
+      {
+        source:     'sentry',
+        sql:        sentryIssuesQuery(body),
+        rowCount:   0,
+        durationMs: 498,
+      },
+      {
+        source:     'posthog',
+        sql:        posthogFeatureFlagsQuery(body),
+        rowCount:   2,
+        durationMs: 701,
+      },
+      {
+        source:     'stripe',
+        sql:        stripeSubscriptionsQuery(body),
+        rowCount:   3,
+        durationMs: 923,
+        // @ts-expect-error launchTs used only in demo log
+        _launchTs:  launchTs,
+      },
+      {
+        source:     'beehiiv',
+        sql:        beehiivPostsQuery(body),
+        rowCount:   1,
+        durationMs: 441,
+      },
+      {
+        source:     'dub',
+        sql:        dubLinksQuery(),
+        rowCount:   2,
+        durationMs: 629,
+      },
+    ],
+  };
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse<AnalyzeResponse>> {
   try {
     const body: AnalyzeRequest = await req.json();
@@ -28,18 +155,24 @@ export async function POST(req: NextRequest): Promise<NextResponse<AnalyzeRespon
       );
     }
 
-    // Build all SQL queries
+    // ── Vercel / serverless: return demo analysis ───────────────────────────
+    // Coral requires a locally installed binary and cannot run in a serverless
+    // environment. Demo mode returns realistic data so the UI can be showcased.
+    if (IS_VERCEL) {
+      return NextResponse.json({ success: true, analysis: buildDemoAnalysis(body) });
+    }
+
+    // ── Local / self-hosted: run real Coral queries ─────────────────────────
     const queries = [
-      { sql: githubPRsQuery(body),              source: 'github-prs' },
-      { sql: githubCIQuery(body),               source: 'github-ci' },
-      { sql: sentryIssuesQuery(body),            source: 'sentry' },
-      { sql: posthogFeatureFlagsQuery(body),     source: 'posthog' },
-      { sql: stripeSubscriptionsQuery(body),     source: 'stripe' },
-      { sql: beehiivPostsQuery(body),            source: 'beehiiv' },
-      { sql: dubLinksQuery(),                    source: 'dub' },
+      { sql: githubPRsQuery(body),           source: 'github-prs' },
+      { sql: githubCIQuery(body),            source: 'github-ci'  },
+      { sql: sentryIssuesQuery(body),        source: 'sentry'     },
+      { sql: posthogFeatureFlagsQuery(body), source: 'posthog'    },
+      { sql: stripeSubscriptionsQuery(body), source: 'stripe'     },
+      { sql: beehiivPostsQuery(body),        source: 'beehiiv'    },
+      { sql: dubLinksQuery(),                source: 'dub'        },
     ];
 
-    // 🚀 Run all queries in parallel via Coral
     const results = await runParallelQueries(queries);
 
     const [
@@ -52,44 +185,41 @@ export async function POST(req: NextRequest): Promise<NextResponse<AnalyzeRespon
       dubResult,
     ] = results;
 
-    // Merge GitHub rows (PRs + CI)
     const githubRows = [
       ...githubPRsResult.rows,
       ...githubCIResult.rows,
     ];
 
-    // Score the launch
     const { score, status, metrics } = scoreLaunch({
       githubRows,
-      sentryRows: sentryResult.rows,
+      sentryRows:  sentryResult.rows,
       posthogRows: posthogResult.rows,
-      stripeRows: stripeResult.rows,
+      stripeRows:  stripeResult.rows,
       beehiivRows: beehiivResult.rows,
-      dubRows: dubResult.rows,
+      dubRows:     dubResult.rows,
     });
 
-    // Build AI insights (rule-based for speed, swap for Groq if time allows)
-    const keyInsights = buildInsights(metrics, score);
+    const keyInsights       = buildInsights(metrics, score);
     const recommendedActions = buildActions(metrics, status);
 
     const analysis: LaunchAnalysis = {
-      id: randomUUID(),
-      featureName: body.featureName,
-      repo: body.repo,
-      owner: body.owner,
-      launchDate: body.launchDate,
-      analyzedAt: new Date().toISOString(),
+      id:             randomUUID(),
+      featureName:    body.featureName,
+      repo:           body.repo,
+      owner:          body.owner,
+      launchDate:     body.launchDate,
+      analyzedAt:     new Date().toISOString(),
       status,
-      healthScore: score,
-      verdictTitle: getVerdictTitle(status),
+      healthScore:    score,
+      verdictTitle:   getVerdictTitle(status),
       verdictSummary: getVerdictSummary(status, metrics, body.featureName),
       metrics,
       keyInsights,
       recommendedActions,
       sqlQueries: results.map((r) => ({
-        source: r.source,
-        sql: r.sql,
-        rowCount: r.rows.length,
+        source:     r.source,
+        sql:        r.sql,
+        rowCount:   r.rows.length,
         durationMs: r.durationMs ?? 0,
       })),
     };
@@ -111,11 +241,10 @@ function buildInsights(
   score: number
 ): string[] {
   const insights: string[] = [];
-
   const github = metrics.find((m) => m.source === 'github');
   const sentry = metrics.find((m) => m.source === 'sentry');
   const stripe = metrics.find((m) => m.source === 'stripe');
-  const dub = metrics.find((m) => m.source === 'dub');
+  const dub    = metrics.find((m) => m.source === 'dub');
 
   if (score >= 70) insights.push('Launch signals are strong across all monitored sources');
   if (github?.sentiment === 'warning') insights.push(`CI failures detected — ${github.subtext}`);
@@ -123,7 +252,8 @@ function buildInsights(
   if (sentry?.sentiment === 'positive') insights.push('Zero new errors detected since launch');
   if (stripe?.value !== 'No new subs yet') insights.push(`Revenue growing: ${stripe?.value}`);
   if (dub?.value !== 'No clicks yet') insights.push(`Strong marketing reach: ${dub?.value}`);
-  if (insights.length === 0) insights.push('Monitoring in progress — check back after more data flows in');
+  if (insights.length === 0)
+    insights.push('Monitoring in progress — check back after more data flows in');
 
   return insights.slice(0, 4);
 }
@@ -134,17 +264,16 @@ function buildActions(
   status: string
 ): string[] {
   const actions: string[] = [];
-
   const sentry = metrics.find((m) => m.source === 'sentry');
   const github = metrics.find((m) => m.source === 'github');
   const stripe = metrics.find((m) => m.source === 'stripe');
 
   if (sentry?.sentiment === 'negative') actions.push('Fix critical errors in Sentry immediately');
-  if (github?.sentiment === 'warning') actions.push('Investigate failed CI runs in GitHub Actions');
+  if (github?.sentiment === 'warning')  actions.push('Investigate failed CI runs in GitHub Actions');
   if (stripe?.value === 'No new subs yet') actions.push('Consider a promotional push to drive first conversions');
-  if (status === 'healthy') actions.push('Monitor for 24h more before marking launch complete');
-  if (status === 'at_risk') actions.push('Schedule a team sync to review launch signals');
-  if (status === 'failing') actions.push('Consider a feature flag rollback immediately');
+  if (status === 'healthy')  actions.push('Monitor for 24h more before marking launch complete');
+  if (status === 'at_risk')  actions.push('Schedule a team sync to review launch signals');
+  if (status === 'failing')  actions.push('Consider a feature flag rollback immediately');
 
   return actions.slice(0, 3);
 }

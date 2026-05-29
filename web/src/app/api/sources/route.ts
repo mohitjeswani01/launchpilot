@@ -1,77 +1,38 @@
 import { NextResponse } from 'next/server';
-import { checkSourceHealth } from '@/lib/coral';
 import { SourceHealthResponse } from '@/lib/types';
 
 // Force dynamic so Next.js never statically pre-renders this route
 export const dynamic = 'force-dynamic';
 
+/**
+ * Returns the health status for each data source.
+ *
+ * "live"         — the API key / token is configured in the environment.
+ * "unconfigured" — the key is missing; the source cannot be queried.
+ *
+ * NOTE: Coral is a local binary and is not available in serverless
+ * environments (Vercel). The health status here reflects whether the
+ * credentials are present, not whether a Coral query succeeded.
+ */
 export async function GET(): Promise<NextResponse<SourceHealthResponse>> {
-  // Build source tests inside handler so process.env is read at runtime
-  const SOURCE_TESTS = [
-    {
-      name: 'github',
-      label: 'GitHub',
-      query: 'SELECT login FROM github.user LIMIT 1',
-      envKey: 'GITHUB_TOKEN',
-    },
-    {
-      name: 'sentry',
-      label: 'Sentry',
-      query: 'SELECT id, slug FROM sentry.projects LIMIT 1',
-      envKey: 'SENTRY_TOKEN',
-    },
-    {
-      name: 'posthog',
-      label: 'PostHog',
-      query: `SELECT id FROM posthog.feature_flags WHERE project_id = '${process.env.POSTHOG_PROJECT_ID ?? ''}' LIMIT 1`,
-      envKey: 'POSTHOG_API_KEY',
-    },
-    {
-      name: 'stripe',
-      label: 'Stripe',
-      query: 'SELECT id FROM stripe.account LIMIT 1',
-      envKey: 'STRIPE_API_KEY',
-    },
-    {
-      name: 'beehiiv',
-      label: 'Beehiiv ⭐',
-      query: `SELECT id FROM beehiiv.publications LIMIT 1`,
-      envKey: 'BEEHIIV_API_KEY',
-    },
-    {
-      name: 'dub',
-      label: 'Dub ⭐',
-      query: 'SELECT id FROM dub.links LIMIT 1',
-      envKey: 'DUB_API_KEY',
-    },
+  const SOURCES = [
+    { name: 'github',  label: 'GitHub',     envKey: 'GITHUB_TOKEN'  },
+    { name: 'sentry',  label: 'Sentry',     envKey: 'SENTRY_TOKEN'  },
+    { name: 'posthog', label: 'PostHog',    envKey: 'POSTHOG_API_KEY' },
+    { name: 'stripe',  label: 'Stripe',     envKey: 'STRIPE_API_KEY' },
+    { name: 'beehiiv', label: 'Beehiiv ⭐', envKey: 'BEEHIIV_API_KEY' },
+    { name: 'dub',     label: 'Dub ⭐',     envKey: 'DUB_API_KEY'   },
   ];
 
-  const results = await Promise.allSettled(
-    SOURCE_TESTS.map(async (s) => {
-      const configured = !!process.env[s.envKey];
-      if (!configured) {
-        return { name: s.name, label: s.label, status: 'unconfigured' as const, configured: false };
-      }
-      const health = await checkSourceHealth(s.name, s.query);
-      return {
-        name: s.name,
-        label: s.label,
-        status: health.healthy ? ('live' as const) : ('error' as const),
-        configured,
-      };
-    })
-  );
-
-  const sources = results.map((r, i) =>
-    r.status === 'fulfilled'
-      ? r.value
-      : {
-          name: SOURCE_TESTS[i].name,
-          label: SOURCE_TESTS[i].label,
-          status: 'error' as const,
-          configured: false,
-        }
-  );
+  const sources = SOURCES.map((s) => {
+    const configured = !!process.env[s.envKey];
+    return {
+      name:       s.name,
+      label:      s.label,
+      status:     (configured ? 'live' : 'unconfigured') as 'live' | 'unconfigured',
+      configured,
+    };
+  });
 
   return NextResponse.json({ sources });
 }
