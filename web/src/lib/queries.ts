@@ -71,11 +71,7 @@ export function stripeSubscriptionsQuery(req: AnalyzeRequest): string {
   // Convert ISO date to Unix timestamp for Stripe
   const unixTs = Math.floor(new Date(req.launchDate).getTime() / 1000);
   return `
-    SELECT id, status, created,
-           plan__amount AS amount_cents,
-           plan__currency AS currency,
-           plan__interval AS interval,
-           customer
+    SELECT id, status, created, customer
     FROM stripe.subscriptions
     WHERE created >= ${unixTs}
     ORDER BY created DESC

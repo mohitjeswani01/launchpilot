@@ -19,7 +19,7 @@ const SOURCE_TESTS = [
   {
     name: 'posthog',
     label: 'PostHog',
-    query: "SELECT id FROM posthog.projects LIMIT 1",
+    query: `SELECT id FROM posthog.feature_flags WHERE project_id = '${process.env.POSTHOG_PROJECT_ID}' LIMIT 1`,
     envKey: 'POSTHOG_API_KEY',
   },
   {
