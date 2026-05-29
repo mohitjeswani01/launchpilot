@@ -76,9 +76,34 @@ export default function HomePage() {
           borderBottom: "1px solid var(--color-border)",
           background: "var(--color-surface)",
           padding: "28px 0 24px",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <div className="page-container">
+        {/* Subtle dot grid */}
+        <div
+          className="bg-dot-grid"
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: 0.6,
+            maskImage: "radial-gradient(ellipse 80% 100% at 20% 50%, black 40%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(ellipse 80% 100% at 20% 50%, black 40%, transparent 100%)",
+          }}
+        />
+        {/* Accent glow */}
+        <div
+          className="glow-orb"
+          style={{
+            width: 320,
+            height: 320,
+            background: "var(--color-accent)",
+            opacity: 0.05,
+            top: -120,
+            right: "10%",
+          }}
+        />
+        <div className="page-container" style={{ position: "relative" }}>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -109,12 +134,12 @@ export default function HomePage() {
             </div>
             <h1
               style={{
-                fontSize: "clamp(22px, 4vw, 32px)",
+                fontSize: "clamp(22px, 4vw, 34px)",
                 fontWeight: 700,
                 color: "var(--color-text-1)",
                 letterSpacing: "-0.04em",
                 lineHeight: 1.15,
-                marginBottom: 8,
+                marginBottom: 10,
               }}
             >
               Know if your launch is winning
@@ -126,11 +151,13 @@ export default function HomePage() {
                 fontSize: 14,
                 color: "var(--color-text-3)",
                 maxWidth: 540,
-                lineHeight: 1.6,
+                lineHeight: 1.7,
               }}
             >
               Joins GitHub, Sentry, PostHog, Stripe, Beehiiv and Dub in one SQL
-              query. Returns a launch health score in seconds.
+              query. Returns a{" "}
+              <span style={{ color: "var(--color-text-2)", fontWeight: 500 }}>launch health score</span>{" "}
+              in seconds.
             </p>
           </motion.div>
         </div>
@@ -295,21 +322,25 @@ export default function HomePage() {
                     <VerdictBanner analysis={analysis} />
 
                     {/* Metric grid */}
-                    <div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                    >
                       <div
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
                           textTransform: "uppercase",
-                          letterSpacing: "0.08em",
+                          letterSpacing: "0.09em",
                           color: "var(--color-text-3)",
-                          marginBottom: 10,
+                          marginBottom: 12,
                         }}
                       >
-                        Source Breakdown
+                        Launch Signals
                       </div>
                       <MetricGrid metrics={analysis.metrics} />
-                    </div>
+                    </motion.div>
 
                     {/* Insights + actions */}
                     <InsightsPanel
@@ -329,24 +360,21 @@ export default function HomePage() {
                         alignItems: "center",
                         gap: 8,
                         flexWrap: "wrap",
+                        fontFamily: "var(--font-mono)",
                       }}
                     >
-                      <span>
-                        Analyzed{" "}
-                        {new Date(analysis.analyzedAt).toLocaleTimeString()}
-                      </span>
+                      <span>Analyzed at {new Date(analysis.analyzedAt).toLocaleTimeString()}</span>
                       <span style={{ color: "var(--color-border-2)" }}>·</span>
                       <span>
                         {analysis.sqlQueries.reduce((s, q) => s + q.rowCount, 0)} rows
-                        from {analysis.sqlQueries.length} queries
+                        · {analysis.sqlQueries.length} queries
                       </span>
                       <span style={{ color: "var(--color-border-2)" }}>·</span>
                       <span>
                         {(
                           analysis.sqlQueries.reduce((s, q) => s + q.durationMs, 0) /
                           1000
-                        ).toFixed(1)}
-                        s total
+                        ).toFixed(1)}s via coral sql
                       </span>
                     </div>
                   </motion.div>
