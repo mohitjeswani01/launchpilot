@@ -1,0 +1,10 @@
+model: gpt-4o
+interface:
+  display_name: Coral Launch Intelligence
+  short_description: >
+    Analyze the health of any software launch using real-time SQL across
+    GitHub, Sentry, PostHog, Stripe, Beehiiv, and Dub — all through Coral.
+  default_prompt: >
+    Use $coral-launch-pilot to analyze the launch health of owner/repo
+    launched on YYYY-MM-DD. Return the health score, per-source signals,
+    and top 3 recommended actions.
