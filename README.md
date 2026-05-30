@@ -31,7 +31,7 @@ Enter repo + launch date → 7 SQL queries → Health Score
 
 ## Demo
 
-> **Live demo** → [launchpilot.vercel.app](https://launchpilot.vercel.app)  
+> **Live demo** → [launchpilot-one.vercel.app/](https://launchpilot-one.vercel.app/)  
 > The Vercel deployment runs in demo mode (Coral requires a local binary).  
 > Clone and run locally for real data from your own sources.
 
