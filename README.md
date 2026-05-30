@@ -21,7 +21,7 @@ LaunchPilot replaces 6 manual dashboards with a single SQL query.
 After shipping a feature or product, most teams have to manually check:
 GitHub for CI status, Sentry for errors, PostHog for adoption, Stripe for revenue, Beehiiv for newsletter reach, and Dub for link clicks. That's 6 tabs, 15 minutes, and still no single answer to "is this launch going well?"
 
-LaunchPilot connects all 6 sources through **[Coral SQL](https://getcoraldb.dev)**, runs 7 parallel queries, and returns a 0–100 launch health score in seconds — with per-source signals, key insights, and recommended next steps.
+LaunchPilot connects all 6 sources through **[Coral SQL](https://withcoral.com/)**, runs 7 parallel queries, and returns a 0–100 launch health score in seconds — with per-source signals, key insights, and recommended next steps.
 
 ```
 Enter repo + launch date → 7 SQL queries → Health Score
@@ -70,7 +70,7 @@ Enter repo + launch date → 7 SQL queries → Health Score
 ### Prerequisites
 
 - Node.js ≥ 20
-- [Coral CLI](https://getcoraldb.dev) installed and in PATH
+- [Coral CLI](https://withcoral.com/) installed and in PATH
 - API keys for the sources you want to query
 
 ### 1. Clone
