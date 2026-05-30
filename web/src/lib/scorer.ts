@@ -31,7 +31,14 @@ export function scoreLaunch(input: ScoringInput): {
   const failedCi = ciRows.filter(
     (r) => r.conclusion === 'failure' || r.conclusion === 'cancelled'
   ).length;
-  const ciScore = ciRows.length > 0 ? Math.max(0, 100 - failedCi * 25) : 70;
+
+  // ci score: 50 neutral baseline when no CI data (not optimistic 70)
+  const ciBaseScore = ciRows.length > 0 ? Math.max(0, 100 - failedCi * 25) : 50;
+  // pr bonus: up to +20 for merged PRs (capped at 5 PRs)
+  const prBonus = Math.min(prCount * 5, 20);
+  const ciScore = Math.min(100, ciBaseScore + prBonus);
+
+  const hasNoGithubData = prCount === 0 && ciRows.length === 0;
 
   metrics.push({
     source: 'github',
@@ -41,9 +48,11 @@ export function scoreLaunch(input: ScoringInput): {
     subtext:
       failedCi > 0
         ? `${failedCi} CI failure${failedCi !== 1 ? 's' : ''} detected`
+        : hasNoGithubData
+        ? 'No activity since launch date'
         : 'All CI checks passing',
     icon: '⚡',
-    sentiment: failedCi > 0 ? 'warning' : 'positive',
+    sentiment: failedCi > 0 ? 'warning' : hasNoGithubData ? 'neutral' : 'positive',
   });
   weightedScore += ciScore * 20;
   totalWeight += 20;
@@ -103,7 +112,8 @@ export function scoreLaunch(input: ScoringInput): {
     return sum + amount;
   }, 0);
   const revenueDollars = (revenue / 100).toFixed(0);
-  const stripeScore = newSubs > 0 ? Math.min(100, 60 + newSubs * 8) : 40;
+  // 50 = neutral baseline (no subs ≠ bad, could be pre-revenue)
+  const stripeScore = newSubs > 0 ? Math.min(100, 60 + newSubs * 8) : 50;
 
   metrics.push({
     source: 'stripe',
